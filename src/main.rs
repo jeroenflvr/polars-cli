@@ -1,8 +1,8 @@
 #[cfg(feature = "highlight")]
 mod highlighter;
+mod input_query_parser;
 mod interactive;
 mod prompt;
-mod input_query_parser;
 
 #[cfg(target_os = "linux")]
 use jemallocator::Jemalloc;
@@ -17,12 +17,12 @@ use serde::{Deserialize, Serialize};
 static ALLOC: Jemalloc = Jemalloc;
 
 use std::io::{self, BufRead, BufReader};
-
 use std::str::FromStr;
 
 use clap::{Parser, ValueEnum};
 use interactive::run_tty;
 use polars::sql::SQLContext;
+
 use crate::input_query_parser::parse_until_semicolon;
 
 #[derive(Parser, Debug)]
@@ -193,8 +193,8 @@ fn run_noninteractive(output_mode: OutputMode) -> io::Result<()> {
                 Ok((_remaining, (_parsed, found_semicolon))) if found_semicolon => {
                     query_complete = true;
                     break;
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 

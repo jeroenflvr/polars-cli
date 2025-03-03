@@ -3,14 +3,11 @@ use std::io::Cursor;
 use std::path::PathBuf;
 
 use clap::crate_version;
-use nom::{
-    branch::alt,
-    bytes::complete::{is_not, tag, take_until},
-    sequence::delimited,
-    IResult,
-    Parser
-};
+use nom::branch::alt;
+use nom::bytes::complete::{is_not, tag, take_until};
 use nom::combinator::recognize;
+use nom::sequence::delimited;
+use nom::{IResult, Parser};
 use once_cell::sync::Lazy;
 use polars::df;
 use polars::prelude::*;
@@ -20,9 +17,7 @@ use reedline::{FileBackedHistory, Reedline, Signal};
 #[cfg(feature = "highlight")]
 use crate::highlighter::SQLHighlighter;
 use crate::prompt::SQLPrompt;
-use crate::{OutputMode, SerializableContext};
-use crate::parse_until_semicolon;
-
+use crate::{parse_until_semicolon, OutputMode, SerializableContext};
 
 fn get_home_dir() -> PathBuf {
     match env::var("HOME") {
@@ -192,18 +187,16 @@ pub(super) fn run_tty(output_mode: OutputMode) -> std::io::Result<()> {
                     _ => {
                         let parse_result = parse_until_semicolon(&buffer);
                         match parse_result {
-                            Ok((_, (result, ready_to_execute))) => {
-                                match ready_to_execute {
-                                    true => {
-                                        scratch.push_str(&result);
-                                        output_mode.execute_query(&scratch, &mut context);
-                                        scratch.clear();
-                                    },
-                                    false => {
-                                        scratch.push_str(&result);
-                                        continue;
-                                    },
-                                }
+                            Ok((_, (result, ready_to_execute))) => match ready_to_execute {
+                                true => {
+                                    scratch.push_str(&result);
+                                    output_mode.execute_query(&scratch, &mut context);
+                                    scratch.clear();
+                                },
+                                false => {
+                                    scratch.push_str(&result);
+                                    continue;
+                                },
                             },
                             Err(e) => {
                                 eprintln!("Error: {}", e);
