@@ -52,7 +52,6 @@ enum OutputMode {
 
 impl OutputMode {
     fn execute_query(&self, query: &str, ctx: &mut SQLContext) {
-        dbg!(query);
         let mut execute_inner = || {
             let mut df = ctx
                 .execute(query)
