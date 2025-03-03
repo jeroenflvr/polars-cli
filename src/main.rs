@@ -2,6 +2,7 @@
 mod highlighter;
 mod interactive;
 mod prompt;
+mod input_query_parser;
 
 #[cfg(target_os = "linux")]
 use jemallocator::Jemalloc;
@@ -15,12 +16,14 @@ use serde::{Deserialize, Serialize};
 #[cfg(target_os = "linux")]
 static ALLOC: Jemalloc = Jemalloc;
 
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, BufReader};
+
 use std::str::FromStr;
 
 use clap::{Parser, ValueEnum};
 use interactive::run_tty;
 use polars::sql::SQLContext;
+use crate::input_query_parser::parse_until_semicolon;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about)]
@@ -49,6 +52,7 @@ enum OutputMode {
 
 impl OutputMode {
     fn execute_query(&self, query: &str, ctx: &mut SQLContext) {
+        dbg!(query);
         let mut execute_inner = || {
             let mut df = ctx
                 .execute(query)
@@ -148,7 +152,9 @@ impl From<SerializableContext> for SQLContext {
 
 pub fn main() -> io::Result<()> {
     let args = Args::parse();
+    dbg!(&args);
     let output_mode = args.output_mode.unwrap_or_default();
+    dbg!(&output_mode);
 
     if let Some(query) = args.command {
         let mut context = SQLContext::new();
@@ -159,6 +165,7 @@ pub fn main() -> io::Result<()> {
         output_mode.execute_query(&query, &mut context);
         Ok(())
     } else if atty::is(atty::Stream::Stdin) {
+        dbg!("Running in interactive mode");
         run_tty(output_mode)
     } else {
         run_noninteractive(output_mode)
@@ -167,17 +174,41 @@ pub fn main() -> io::Result<()> {
 
 fn run_noninteractive(output_mode: OutputMode) -> io::Result<()> {
     let mut context = SQLContext::new();
-    let mut input: Vec<u8> = Vec::with_capacity(1024);
     let stdin = std::io::stdin();
+    let mut reader = BufReader::new(stdin.lock());
+    let mut buffer = String::new();
 
     loop {
-        input.clear();
-        stdin.lock().read_until(b';', &mut input)?;
+        buffer.clear();
+        let mut query_complete = false;
 
-        let query = std::str::from_utf8(&input).unwrap_or("").trim();
-        if query.is_empty() {
+        loop {
+            let mut line = String::new();
+            let bytes_read = reader.read_line(&mut line)?;
+            if bytes_read == 0 {
+                break;
+            }
+            buffer.push_str(&line);
+
+            match parse_until_semicolon(&buffer) {
+                Ok((_remaining, (_parsed, found_semicolon))) if found_semicolon => {
+                    query_complete = true;
+                    break;
+                }
+                _ => {}
+            }
+        }
+
+        let trimmed = buffer.trim();
+        if trimmed.is_empty() {
             break;
         }
+
+        let query = if trimmed.ends_with(';') {
+            trimmed[..trimmed.len() - 1].trim()
+        } else {
+            trimmed
+        };
 
         output_mode.execute_query(query, &mut context);
     }
