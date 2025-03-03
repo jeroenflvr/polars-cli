@@ -82,7 +82,7 @@ mod tests {
     fn test_missing_closing_quote() {
         let input = "'incomplete";
         let result = parse_quoted(input);
-        // Expect an error because the closing quote is missing.
+        // expect an error because the closing quote is missing.
         assert!(
             result.is_err(),
             "Expected error for missing closing quote, got {:?}",
@@ -94,7 +94,7 @@ mod tests {
     fn test_no_starting_quote() {
         let input = "no quote'";
         let result = parse_quoted(input);
-        // Expect an error because the input doesn't start with a quote.
+        // expect an error because the input doesn't start with a quote.
         assert!(
             result.is_err(),
             "Expected error for missing starting quote, got {:?}",
@@ -105,7 +105,7 @@ mod tests {
     #[test]
     fn test_starts_with_forbidden_char() {
         let input = "'hello";
-        // If the input starts with a forbidden character, the parser should fail.
+        // if the input starts with a forbidden character, the parser should fail.
         let result = parse_unquoted(input);
         assert!(
             result.is_err(),
