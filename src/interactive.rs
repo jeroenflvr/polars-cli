@@ -3,11 +3,6 @@ use std::io::Cursor;
 use std::path::PathBuf;
 
 use clap::crate_version;
-use nom::branch::alt;
-use nom::bytes::complete::{is_not, tag, take_until};
-use nom::combinator::recognize;
-use nom::sequence::delimited;
-use nom::{IResult, Parser};
 use once_cell::sync::Lazy;
 use polars::df;
 use polars::prelude::*;

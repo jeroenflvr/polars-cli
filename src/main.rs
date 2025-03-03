@@ -151,9 +151,7 @@ impl From<SerializableContext> for SQLContext {
 
 pub fn main() -> io::Result<()> {
     let args = Args::parse();
-    dbg!(&args);
     let output_mode = args.output_mode.unwrap_or_default();
-    dbg!(&output_mode);
 
     if let Some(query) = args.command {
         let mut context = SQLContext::new();
@@ -179,7 +177,6 @@ fn run_noninteractive(output_mode: OutputMode) -> io::Result<()> {
 
     loop {
         buffer.clear();
-        let mut query_complete = false;
 
         loop {
             let mut line = String::new();
@@ -191,7 +188,6 @@ fn run_noninteractive(output_mode: OutputMode) -> io::Result<()> {
 
             match parse_until_semicolon(&buffer) {
                 Ok((_remaining, (_parsed, found_semicolon))) if found_semicolon => {
-                    query_complete = true;
                     break;
                 },
                 _ => {},
@@ -203,8 +199,8 @@ fn run_noninteractive(output_mode: OutputMode) -> io::Result<()> {
             break;
         }
 
-        let query = if trimmed.ends_with(';') {
-            trimmed[..trimmed.len() - 1].trim()
+        let query = if let Some(s) = trimmed.strip_suffix(';') {
+            s.trim()
         } else {
             trimmed
         };
